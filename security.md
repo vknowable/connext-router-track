@@ -1,11 +1,11 @@
-#Improving Router security
+# Improving Router security
 
 (starting doc: https://connext.academy/routers/how-to-improve-router-security-by-p2p/)
 
 **include a blurb about why security is important for the router and also the network as a whole, eg: the better the collective security...**
 
 ***
-##Unexpected Docker/UFW Interaction -- Securing the Router's API Endpoint
+## Unexpected Docker/UFW Interaction -- Securing the Router's API Endpoint
 
 Please be aware that Docker will by default override UFW/iptables rules. If you're using the Docker Router, check that you're not accidentally exposing your Router API endpoint externally.
 
@@ -36,7 +36,7 @@ to:
 
 Restart Docker-Compose after making the change. The endpoint should now only be available from the machine running the Router -- try again from an external machine to make sure the change was successful.
 ***
-##Admin Token Best Practices
+## Admin Token Best Practices
 
 **Check: is REST API still implemented in Amarok? Doc page seems to have been removed**
 
@@ -50,7 +50,7 @@ Be sure to use a sufficiently long token (50 characters or more) to avoid the po
 
 `pwgen -s 50 1`
 
-####Optional: Move Admin Token Out of plaintext
+#### Optional: Move Admin Token Out of plaintext
 
 The Admin Token is stored in plaintext in the Router's `config.json` file, so for additional security you may wish to follow the steps below to load your **config.json** into `tmpfs` before starting the Router, and unmount it after the Router is started. Keep in mind that using this method will require you to generate and move your configuration into **tmpfs** on each Router restart, and the old contents will be lost -- so don't forget to backup any important information first (e.g. your wallet mnemonic, if using one!)
 
@@ -70,7 +70,7 @@ The Admin Token is stored in plaintext in the Router's `config.json` file, so fo
 
 
 ***
-##Setting Recipient and Owner Addresses
+## Setting Recipient and Owner Addresses
 
 In addition to the Router's own signing address, each Router is associated with a `Recipient` and `Owner` address. These are configured in the respective `Connext Handler` contracts of each chain.
 
@@ -86,7 +86,7 @@ Please be aware that each Router's **Recipient** and **Owner** addresses can be 
 
 
 ***
-##Protecting Your Router's Private Key
+## Protecting Your Router's Private Key
 
 **A little more research needed: any specific problems (eg: griefing, double spend) either for individual operator or network/users that result from a compromised router colluding with a user? Or is it just best practices?**
 
@@ -100,7 +100,7 @@ Instead, use one of the supported [Web3Signer methods](https://docs.web3signer.c
 Pick one specific Web3Signer method and write a guide on setting it up step by step for mission points. Ideally we could end up with guides on 3-4 different methods**
 
 ***
-##Protect Your Router's IP Address
+## Protect Your Router's IP Address
 
 Consider using a setup that doesn't expose your Router IP Address to the public. For example, many cloud providers support features like virtual private networks, private instances and Cloud NATs. An example setup might look like this:  
 ```

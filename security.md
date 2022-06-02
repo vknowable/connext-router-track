@@ -2,7 +2,9 @@
 
 (starting doc: https://connext.academy/routers/how-to-improve-router-security-by-p2p/)
 
-**include a blurb about why security is important for the router and also the network as a whole, eg: the better the collective security...**
+**include a blurb about why security is important for the router operator and also the network as a whole, eg: the better the collective security...**
+
+**include a blurb about Knowable's strategy, eg: we run our router assuming that our Router operator machine will be compromised"
 
 ***
 ## Unexpected Docker/UFW Interaction -- Securing the Router's API Endpoint
@@ -38,9 +40,9 @@ Restart Docker-Compose after making the change. The endpoint should now only be 
 ***
 ## Admin Token Best Practices
 
-**Check: is REST API still implemented in Amarok? Doc page seems to have been removed**
+***[To verify: is REST API still implemented in Amarok? Doc page seems to have been removed]***
 
-Each router has an **Admin Token** which is a string chosen by the operator and set in its `config.json`.
+Each Router has an **Admin Token**, which is a string chosen by the operator and set in its `config.json`.
 
 The Admin Token is used to authenticate requests made to the Router's REST API endpoint and must be kept secret.
 
@@ -88,7 +90,7 @@ Please be aware that each Router's **Recipient** and **Owner** addresses can be 
 ***
 ## Protecting Your Router's Private Key
 
-**A little more research needed: any specific problems (eg: griefing, double spend) either for individual operator or network/users that result from a compromised router colluding with a user? Or is it just best practices?**
+**A little more research needed: any specific problems (eg: griefing, double spend) either for individual operator or network/users that result from a compromised Router colluding with a user? Or is it just best practices?**
 
 Avoid operating your Router with your private key or mnemonic stored in plaintext. While it's possible to use a mnemonic in `config.json` or stored unencrypted in a `key.yml` file (as in `key.example.yml`), these should be considered for testing purposes only.
 

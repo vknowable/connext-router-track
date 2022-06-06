@@ -1,13 +1,13 @@
 # Connext Router track security advises
 
-Here are some few security tips if you are planning to run a router on the connext
+Here are a few security tips if you are planning to run a Router on Connext
 
 ## Unexpected Docker/UFW Interaction -- Securing the Router's API Endpoint
 
-Please be aware that Docker will by default override UFW/iptables rules. If you're using the Docker Router, check that you're not accidentally exposing your Router API endpoint externally.
+Please be aware that Docker will override any UFW/iptables rules by default. If you're using the Docker Router, check to see if you're not accidentally exposing your Router API endpoint externally.
 
 **Example:**  
-After configuring UFW on a server running the Docker Router to block `ROUTER_EXTERNAL_PORT` (defined in the `.env` file -- `8000` by default), we expect the following to fail from an external machine:  
+After configuring UFW on a server running the Docker Router to block `ROUTER_EXTERNAL_PORT` (defined in the `.env` file -- `8000` by default), we would expect the following to fail from an external machine:  
 
 `curl http://x.x.x.x:8000/config`  
 
@@ -31,13 +31,13 @@ to:
 ...
 ```
 
-Restart Docker-Compose after making the change. The endpoint should now only be available from the machine running the Router -- try again from an external machine to make sure the change was successful.
+Restart the Docker-Compose stack after making the change. The endpoint should now only be available from the machine running the Router -- try again from an external machine to make sure the change was successful.
 ***
 ## Admin Token Best Practices
 
 ***[To verify: is REST API still implemented in Amarok? Doc page seems to have been removed]***
 
-Each Router has an **Admin Token**, which is a string chosen by the operator and set in its `config.json`.
+Each Router has an **Admin Token**, which is a string chosen by the operator and set in it the `config.json` file.
 
 The Admin Token is used to authenticate requests made to the Router's REST API endpoint and must be kept secret.
 
@@ -94,7 +94,7 @@ Instead, use one of the supported [Web3Signer methods](https://docs.web3signer.c
 **Web3Signer** supports a variety of external key vaults and HSMs. Consult the [official docs](https://docs.web3signer.consensys.net/en/latest/Reference/Key-Configuration-Files/) to get started, but if you need help getting up and running with a specific method, please feel free to reach out on our Discord... chances are we can connect you with another operator who's already gone through the setup process!
 
 
-Whenever you are joining a crypto project we advie that you should use a brand new wallet each time. 
+Whenever you are joining a crypto project we advise that you should use a brand new wallet each time. 
 You can generate a private key using the following command:
 `openssl rand -hex 32 > private_key.json`
 
@@ -111,14 +111,14 @@ Consider using a setup that doesn't expose your Router IP Address to the public.
 Key Vault
 ```
 
-To connect to your router host machine you can use a bastion server(jump server) to access it. A great tool for directly access your host machine is [teleport](https://goteleport.com/)
+To connect to your router host machine you can use a bastion server (jump server) to access it. A great tool for directly access your host machine is [teleport](https://goteleport.com/)
 
 To have a deep dive understanding how private network works:
 ![ALT text](schema/nat.png)
 
-As you can see in the digram above you can't access directly your router, only through the bastion server and then you can connect to the router host. Router is accesing the internet through NAT using it as gateway. 
+As you can see in the digram above you can't directly access your router. You can only do this through the bastion server and then you can connect to the router host. The Router is accesing the internet through NAT using it as gateway. 
 
-Using this configuration is less possible for a attack to compromose your router host.
+Using this configuration is less prone to attacks that would compromise your router host.
 
 
 **Further reading:**  
@@ -126,12 +126,8 @@ AWS docs: [Private Instances](https://aws.amazon.com/vpc/), [Cloud NAT](https://
 GCP docs: [Private VPC](https://cloud.google.com/data-fusion/docs/how-to/create-private-ip), [Cloud NAT](https://cloud.google.com/nat/docs/overview)
 
 
-If you are connecting straigh from internet to your VM using ssh you should consider  the following options:
-  - Use a private key to connect to the VM instead of the password
-  - Change default ssh port from port 22 to any other port(for example 9922), they are a lot of bots scraping on the internet for port 22
+If you are connecting straight from internet to your VM using SSH you should consider the following options:
+  - Use a private key to connect to the VM instead of a password
+  - Change the default ssh port from port 22 to any other port (for example 9922), there are a lot of bots scraping on the internet for port 22
   - Disable ssh root login
-  - Restrict ssh access using iptables(ufw), be carefull you can locked out outside of your VM. You should only allow your host public ip address to connect to the router VM
-
-
-
-
+  - Restrict ssh access using iptables(ufw), be careful because you can get locked outside your VM. You should only allow your host public ip address to connect to the router VM

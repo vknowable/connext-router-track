@@ -69,6 +69,8 @@ The Admin Token is stored in plaintext in the Router's `config.json` file. To av
 ***
 ## Setting Recipient and Owner Addresses
 
+![ALT text](schema/wallet.png)
+
 In addition to its own signing address, each Router has a **Recipient** and **Owner** address set in the respective `Connext Handler` contracts of each chain.
 
 - `Recipient`: Whenever liquidity is removed from the Router, the funds will be sent to this address. If an attacker were to compromise your Router, they would at best be able to withdraw your funds to the **Recipient** address (which you hopefully still control). We advise using a hardware wallet for the recipient address.
@@ -85,19 +87,39 @@ Please be aware that each Router's Recipient and Owner addresses can be publicly
 ***
 ## Protecting Your Router's Private Key
 
-**A little more research needed: any specific problems (eg: griefing, double spend) either for individual operator or network/users that result from a compromised Router colluding with a user? Or is it just best practices?**
+Whenever you are joining a crypto project we advise that you should use a brand new wallet each time.
+You can generate a private key using the following command:  
+`openssl rand -hex 32 > private_key.json`  
 
-Avoid operating your Router with your private key or mnemonic stored in plaintext. While it's possible to use a mnemonic in `config.json` or stored unencrypted in a `key.yml` file, these should be considered for testing purposes only.
+Avoid operating your Router with your private key or mnemonic stored in plaintext. While it's possible to use a mnemonic in `config.json` or stored unencrypted in a `key.yaml` file, these should be considered for testing purposes only.
 
 Instead, use one of the supported [Web3Signer methods](https://docs.web3signer.consensys.net/en/latest/HowTo/Use-Signing-Keys/). Using an external KMS that explicitly whitelists Web3Signer will allow you to move your private key out of plaintext and off your Router server entirely.
 
-Web3Signer supports a variety of external key vaults and HSMs. Consult the [official docs](https://docs.web3signer.consensys.net/en/latest/Reference/Key-Configuration-Files/) to get started, but if you need help getting up and running with a specific method, please feel free to reach out on our Discord... chances are we can connect you with another operator who's already gone through the setup process!
+Web3Signer has native support for several key vaults and HSMs, as well as encrypted keystore files. Consult the [official docs](https://docs.web3signer.consensys.net/en/latest/Reference/Key-Configuration-Files/) to get started, or ask in our Discord server.
 
-
-Whenever you are joining a crypto project we advise that you should use a brand new wallet each time.
-You can generate a private key using the following command:  
-`openssl rand -hex 32 > private_key.json`
-
+#### Example: Using Google Secrets Manager with Keystore Files
+Web3Signer doesn't have built-in support for Google Secrets Manager, but we can use a strategy like the one below that combines Secrets Manager with an encrypted keystore file. Web3Signer expects the key password to be given in a text file. Instead of storing the password on our hard drive, we'll store it in Secrets Manager and write the file to *tmpfs* just long enough to allow Web3Signer to load the key into memory, deleting it afterwards. This approach is a little more secure than storing the private key itself in Secrets Manager, because two pieces of information from two different sources are needed to read the key. The generated keystore (json) file is portable and can be safely backed up or moved to a new VM as needed.
+1. Grant your Web3Signer VM the needed permissions to read secrets.
+2. Generate a secure password for your keystore file:  
+`echo $(pwgen -s 50 1) > pwd.password`
+3. Store the password in Secrets Manager.
+4. Use the password file to generate a keystore file. For example, using [geth](https://geth.ethereum.org/docs/install-and-build/installing-geth):  
+`geth account new --password pwd.password`  
+You can copy the keystore file to a more convenient directory.
+5. Securely delete the `pwd.password` file.
+6. Create your key config file:
+```
+type: "file-keystore"
+keyType: "SECP256K1"
+keystoreFile: "key.json"
+keystorePasswordFile: "/home/node/signer/pwd/pwd.password"
+```
+7. Create and mount a *tmpfs*.
+8. Before running the Web3Signer container, retrieve the password from Secrets Manager and write the required text file in *tmpfs*:  
+`echo $(gcloud secrets versions access --secret {your secret name} latest) > /{tmpfs dir}/pwd.password`
+8. Run the Web3Signer container, bind mounting the *tmpfs* directory containing the password file. Don't forget to also mount the directory containing your keystore json file and key config file.
+9. Check the container's `docker logs`. If successful, you should see **Total signers (keys) currently loaded in memory: 1**.
+10. With the key loaded into memory, we can delete the password file and unmount our previously created *tmpfs*.
 
 ***
 ## Secure Cloud Architecture

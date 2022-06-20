@@ -98,7 +98,7 @@ Instead, use one of the supported [Web3Signer methods](https://docs.web3signer.c
 Web3Signer has native support for several key vaults and HSMs, as well as encrypted keystore files. Consult the [official docs](https://docs.web3signer.consensys.net/en/latest/Reference/Key-Configuration-Files/) to get started, or ask in our Discord server.
 
 #### Example: Using Google Secrets Manager with Keystore Files
-Web3Signer doesn't have built-in support for Google Secrets Manager, but we can use a strategy like the one below that combines Secrets Manager with an encrypted keystore file. Web3Signer expects the key password to be given in a text file. Instead of storing the password on our hard drive, we'll store it in Secrets Manager and write the file to *tmpfs* just long enough to allow Web3Signer to load the key into memory, deleting it afterwards. This approach is a little more secure than storing the private key itself in Secrets Manager, because two pieces of information from two different sources are needed to read the key. The generated keystore (json) file is portable and can be safely backed up or moved to a new VM as needed.
+Web3Signer doesn't have built-in support for Google Secrets Manager, but we can use a strategy like the one below that combines Secrets Manager with an encrypted keystore file. Web3Signer expects the key password to be given in a text file. But instead of storing the password on our hard drive, we'll store it in Secrets Manager and write the needed file to *tmpfs* on demand, removing it again after Web3Signer has started and loaded the key into memory. This approach is a little more secure than storing the private key directly in Secrets Manager, because two pieces of information from two different sources are needed to learn the key. Also, the generated keystore (json) file is fully encrypted/portable and can be safely backed up or moved to a new VM as needed.
 1. Grant your Web3Signer VM the needed permissions to read secrets.
 2. Generate a secure password for your keystore file:  
 `echo $(pwgen -s 50 1) > pwd.password`
@@ -106,20 +106,46 @@ Web3Signer doesn't have built-in support for Google Secrets Manager, but we can 
 4. Use the password file to generate a keystore file. For example, using [geth](https://geth.ethereum.org/docs/install-and-build/installing-geth):  
 `geth account new --password pwd.password`  
 You can copy the keystore file to a more convenient directory.
-5. Securely delete the `pwd.password` file.
-6. Create your key config file:
+5. Securely delete the password file.  
+`shred -uvz -n 3 pwd.password`
+6. Create your key config file. Note that *keystorePasswordFile* refers to the directory inside the container:
 ```
 type: "file-keystore"
 keyType: "SECP256K1"
 keystoreFile: "key.json"
 keystorePasswordFile: "/home/node/signer/pwd/pwd.password"
 ```
-7. Create and mount a *tmpfs*.
-8. Before running the Web3Signer container, retrieve the password from Secrets Manager and write the required text file in *tmpfs*:  
-`echo $(gcloud secrets versions access --secret {your secret name} latest) > /{tmpfs dir}/pwd.password`
-8. Run the Web3Signer container, bind mounting the *tmpfs* directory containing the password file. Don't forget to also mount the directory containing your keystore json file and key config file.
-9. Check the container's `docker logs`. If successful, you should see **Total signers (keys) currently loaded in memory: 1**.
-10. With the key loaded into memory, we can delete the password file and unmount our previously created *tmpfs*.
+7. Whenever we need to run Web3Signer, we'll retrieve the password from Secrets Manager directly to *tmpfs* first. We'll run the container using a bind mount for the password file (in *tmpfs*) and another for the directory containing the keystore json and config files, deleting the password file after the container has started and loaded the key into memory. See below:
+```
+# create tmpfs
+sudo mkdir /mnt/tmpfs
+sudo mount -t tmpfs -o size=100m tmpfs /mnt/tmpfs
+
+# retrieve keystore password from Secrets Manager
+echo $(gcloud secrets versions access --secret {name of your secret} latest) > /mnt/tmpfs/pwd.password
+
+# run web3signer on port 9000
+# bind mount password directory (tmpfs)
+# second bind mount for keystore json and config files
+docker run -d -p 9000:9000 --name web3signer \
+-v {your config directory}:/home/node/signer \
+-v /mnt/tmpfs:/home/node/signer/pwd \
+consensys/web3signer:develop \
+--config-file=/home/node/signer/config.yaml eth1
+
+# should show 1 key loaded into memory and ready to to handle signing requests
+echo $(docker logs web3signer | grep -o "Total signers (keys) currently loaded in memory: .")
+echo $(docker logs web3signer | grep "Runner | Web3Signer has started")
+
+# delete password file
+rm -rf /mnt/tmpfs/pwd.password
+sudo umount /mnt/tmpfs
+
+# should now be 'file not found' in both cases
+cat /mnt/tmpfs/pwd.password
+docker exec web3signer cat /home/node/signer/pwd/pwd.password
+
+```
 
 ***
 ## Secure Cloud Architecture
